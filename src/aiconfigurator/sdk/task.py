@@ -47,10 +47,17 @@ def _validate_deepseek_v4_model_hardware_support(
     model_path: str,
     system_name: str,
     decode_system_name: str | None,
+    backend_name: str,
+    moe_backend: str | None,
 ) -> None:
     """Reject native DeepSeek-V4 FP4-expert checkpoints on Hopper."""
     replacement = _DEEPSEEK_V4_NATIVE_FP4_TO_FP8_MODEL.get(model_path)
     if replacement is None:
+        return
+    if backend_name == "sglang" and moe_backend == "marlin":
+        logger.info(
+            "Allowing native DeepSeek-V4 FP4 checkpoint on Hopper for SGLang Marlin W4A16 MoE path."
+        )
         return
 
     systems = [system_name]
@@ -816,6 +823,8 @@ class TaskConfig:
             model_path=model_path,
             system_name=system_name,
             decode_system_name=decode_system_name,
+            backend_name=backend_name,
+            moe_backend=moe_backend,
         )
 
         ctx = TaskContext(
@@ -1019,6 +1028,15 @@ class TaskConfig:
                 self.backend_name,
                 worker_name,
             )
+            wc_moe_backend = _get_cfg_value(worker_cfg, "moe_backend") or moe_backend
+            if (
+                is_deepseek_v4
+                and self.backend_name == "sglang"
+                and wc_moe_backend == "marlin"
+                and str((model_raw_config or {}).get("expert_dtype", "")).lower() == "fp4"
+            ):
+                model_config.moe_quant_mode = common.MoEQuantMode.w4a16_mxfp4
+                logger.info("Using SGLang Marlin W4A16 MoE quant mode for native DeepSeek-V4 FP4 checkpoint.")
 
             # Apply inferred quant modes to worker config.
             quant_modes = {
@@ -1063,7 +1081,7 @@ class TaskConfig:
             _supported_or_raise("gemm", gemm_mode, supported, system_name, backend_version)
 
             moe_mode = _to_name(_get_cfg_value(wc, "moe_quant_mode"))
-            wc_moe_backend = getattr(wc, "moe_backend", None) or moe_backend
+            wc_moe_backend = _get_cfg_value(wc, "moe_backend") or moe_backend
             if self.backend_name == "sglang" and wc_moe_backend == "deepep_moe":
                 if validate_context:
                     _supported_or_raise("wideep_context_moe", moe_mode, supported, system_name, backend_version)

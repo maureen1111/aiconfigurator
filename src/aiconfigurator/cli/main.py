@@ -990,6 +990,7 @@ _EXPERIMENT_RESERVED_KEYS = {
     "request_latency",
     "enable_wideep",
     "enable_eplb",
+    "moe_backend",
     "total_gpus",
     "database_mode",
     "engine_step_backend",
@@ -1129,6 +1130,8 @@ def build_experiment_task_configs(
             task_kwargs["enable_wideep"] = exp_config["enable_wideep"]
         if "enable_eplb" in exp_config:
             task_kwargs["enable_eplb"] = exp_config["enable_eplb"]
+        if "moe_backend" in exp_config:
+            task_kwargs["moe_backend"] = exp_config["moe_backend"]
         if "enable_chunked_prefill" in exp_config:
             task_kwargs["enable_chunked_prefill"] = exp_config["enable_chunked_prefill"]
         if "database_mode" in exp_config:
