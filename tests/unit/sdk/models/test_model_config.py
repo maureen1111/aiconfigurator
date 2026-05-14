@@ -388,6 +388,18 @@ class TestHFModelSupport:
                 database_mode="SOL",
             )
 
+    def test_native_deepseek_v4_fp4_checkpoint_allowed_for_sglang_marlin_on_hopper(self):
+        task = TaskConfig(
+            serving_mode="agg",
+            model_path="deepseek-ai/DeepSeek-V4-Pro",
+            system_name="h200_sxm",
+            backend_name="sglang",
+            moe_backend="marlin",
+            database_mode="SOL",
+        )
+
+        assert task.config.worker_config.moe_quant_mode == common.MoEQuantMode.w4a16_mxfp4
+
 
 class TestKVCacheElementsPerToken:
     """Regression tests for ``BaseModel.get_kvcache_elements_per_token``.
