@@ -148,6 +148,8 @@ aiconfigurator cli estimate --model-path Qwen/Qwen3-32B --system h200_sxm --tp-s
 ------------------------------------------------------------
   tokens/s:         2,153.38
   tokens/s/gpu:     1,076.69
+  prefill tok/s:    8,628.52
+  prefill tok/s/gpu: 4,314.26
   tokens/s/user:    34.34
   seq/s:            4.214
   Concurrency:      64
@@ -176,6 +178,7 @@ result = cli_estimate(
 print(f"TTFT: {result.ttft:.2f} ms, TPOT: {result.tpot:.2f} ms")
 print(f"Power: {result.power_w:.1f} W")
 print(f"Throughput: {result.tokens_per_second_per_gpu:,.2f} tokens/s/gpu")
+print(f"Prefill throughput: {result.prefill_tokens_per_second_per_gpu:,.2f} tokens/s/gpu")
 
 # Disaggregated estimation
 result = cli_estimate(

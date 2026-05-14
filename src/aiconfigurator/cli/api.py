@@ -494,6 +494,16 @@ class EstimateResult:
         return self.raw.get("tokens/s/gpu", 0.0)
 
     @property
+    def prefill_tokens_per_second(self) -> float:
+        """System prefill/input token throughput after prefix cache (tokens/s)."""
+        return self.raw.get("prefill_tokens/s", 0.0)
+
+    @property
+    def prefill_tokens_per_second_per_gpu(self) -> float:
+        """Per-GPU prefill/input token throughput after prefix cache (tokens/s/gpu)."""
+        return self.raw.get("prefill_tokens/s/gpu", 0.0)
+
+    @property
     def tokens_per_second_per_user(self) -> float:
         """Per-user output throughput (tokens/s/user)."""
         return self.raw.get("tokens/s/user", 0.0)

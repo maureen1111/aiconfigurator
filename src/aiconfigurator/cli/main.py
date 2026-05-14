@@ -1639,6 +1639,8 @@ def _run_estimate_mode(args):
     print("-" * 60)
     print(f"  tokens/s:         {result.tokens_per_second:,.2f}")
     print(f"  tokens/s/gpu:     {result.tokens_per_second_per_gpu:,.2f}")
+    print(f"  prefill tok/s:    {result.prefill_tokens_per_second:,.2f}")
+    print(f"  prefill tok/s/gpu: {result.prefill_tokens_per_second_per_gpu:,.2f}")
     print(f"  tokens/s/user:    {result.tokens_per_second_per_user:,.2f}")
     print(f"  seq/s:            {result.seq_per_second:,.3f}")
     print(f"  Concurrency:      {result.concurrency:.0f}")

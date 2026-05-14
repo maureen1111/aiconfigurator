@@ -42,6 +42,7 @@ def _static_row(
     ttft = 50.0 / tp if mode == "static_ctx" else 0.0
     tpot = 5.0 / tp if mode == "static_gen" else 0.0
     seq_s = bs * 10.0
+    prefill_tokens_s = seq_s * isl if mode == "static_ctx" else 0.0
     return {
         "model": "test-model",
         "isl": isl,
@@ -57,6 +58,8 @@ def _static_row(
         "seq/s/gpu": seq_s / num_gpus,
         "tokens/s": seq_s * osl,
         "tokens/s/gpu": seq_s * osl / num_gpus,
+        "prefill_tokens/s": prefill_tokens_s,
+        "prefill_tokens/s/gpu": prefill_tokens_s / num_gpus,
         "tokens/s/user": osl / max(tpot, 1e-9),
         "request_latency": ttft + tpot * max(osl - 1, 0),
         "context_latency": ttft,
@@ -303,6 +306,29 @@ class TestRateMatchingDegradationFactors:
         tsg_1 = df_1["tokens/s/gpu"].iloc[0]
         tsg_05 = df_05["tokens/s/gpu"].iloc[0]
         assert tsg_1 > tsg_05, f"factor=1.0 should yield higher tokens/s/gpu ({tsg_1}) than factor=0.5 ({tsg_05})"
+
+    def test_prefill_token_throughput_is_reported(self, disagg_session, runtime_config, model_config):
+        """Disagg summaries expose prompt/input token throughput separately from output throughput."""
+        disagg_session.set_rate_matching_degradation_factors(1.0, 1.0)
+        result = _run(
+            disagg_session,
+            runtime_config,
+            model_config,
+            prefill_cfgs=[(1, 1, 1, 1, 1)],
+            decode_cfgs=[(1, 1, 1, 1, 1)],
+            require_same_tp=False,
+        )
+
+        assert result is not None
+        df = result.get_summary_df()
+        assert df is not None and not df.empty
+        row = df.iloc[0]
+        expected_prefill_tokens_s = row["seq/s"] * (row["isl"] - row["prefix"])
+        assert row["prefill_tokens/s"] == pytest.approx(expected_prefill_tokens_s)
+        assert row["prefill_tokens/s/gpu"] == pytest.approx(expected_prefill_tokens_s / row["num_total_gpus"])
+        assert row["(p)prefill_tokens/s/worker"] == pytest.approx(
+            row["(p)seq/s/worker"] * (row["isl"] - row["prefix"])
+        )
 
 
 def _run_hetero(

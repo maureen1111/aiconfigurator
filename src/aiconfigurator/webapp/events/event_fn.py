@@ -49,6 +49,7 @@ def create_scatter_plot(df, x_col, y_col, title, is_disagg=False):
                 marker=dict(color="blue", size=8),
                 hovertemplate="<b>tokens/s/user:</b> %{customdata[9]:.2f}<br>"
                 + "<b>tokens/s/gpu:</b> %{customdata[10]:.2f}<br>"
+                + "<b>prefill tokens/s:</b> %{customdata[11]:.2f}<br>"
                 + "<b>request latency(ms):</b> %{customdata[8]:.2f}<br>"
                 + "<b>TTFT(ms):</b> %{customdata[0]:.2f}<br>"
                 + "<b>TPOT(ms):</b> %{customdata[1]:.2f}<br>"
@@ -71,6 +72,7 @@ def create_scatter_plot(df, x_col, y_col, title, is_disagg=False):
                         df["request_latency"],
                         df["tokens/s/user"],
                         df["tokens/s/gpu"],
+                        df.get("prefill_tokens/s", pd.Series(0.0, index=df.index)),
                     ),
                     axis=1,
                 ),
@@ -86,6 +88,7 @@ def create_scatter_plot(df, x_col, y_col, title, is_disagg=False):
                 marker=dict(color="blue", size=8),
                 hovertemplate="<b>tokens/s/user:</b> %{customdata[19]:.2f}<br>"
                 + "<b>tokens/s/gpu:</b> %{customdata[20]:.2f}<br>"
+                + "<b>prefill tokens/s:</b> %{customdata[21]:.2f}<br>"
                 + "<b>request latency(ms):</b> %{customdata[18]:.2f}<br>"
                 + "<b>TTFT(ms):</b> %{customdata[0]:.2f}<br>"
                 + "<b>TPOT(ms):</b> %{customdata[1]:.2f}<br>"
@@ -93,6 +96,7 @@ def create_scatter_plot(df, x_col, y_col, title, is_disagg=False):
                 + "<b>prefill hardware:</b> %{customdata[3]}<br>"
                 + "<b>prefill workers:</b> %{customdata[4]}<br>"
                 + "<b>prefill seq/s/worker:</b> %{customdata[5]:.2f}<br>"
+                + "<b>prefill tokens/s/worker:</b> %{customdata[22]:.2f}<br>"
                 + "<b>prefill parallel:</b> %{customdata[6]}<br>"
                 + "<b>prefill bs:</b> %{customdata[7]}<br>"
                 + "<b>prefill memory:</b> %{customdata[8]}<br>"
@@ -128,6 +132,8 @@ def create_scatter_plot(df, x_col, y_col, title, is_disagg=False):
                         df["request_latency"],
                         df["tokens/s/user"],
                         df["tokens/s/gpu"],
+                        df.get("prefill_tokens/s", pd.Series(0.0, index=df.index)),
+                        df.get("(p)prefill_tokens/s/worker", pd.Series(0.0, index=df.index)),
                     ),
                     axis=1,
                 ),
@@ -1103,6 +1109,7 @@ class EventFn:
                     hovertemplate=f"<b>system type:</b> {system_type}<br>"
                     + "<b>tokens/s/user:</b> %{customdata[8]:.2f}<br>"
                     + "<b>tokens/s/gpu:</b> %{customdata[9]:.2f}<br>"
+                    + "<b>prefill tokens/s:</b> %{customdata[11]:.2f}<br>"
                     + "<b>request latency(ms):</b> %{customdata[10]:.2f}<br>"
                     + "<b>TTFT(ms):</b> %{customdata[0]:.2f}<br>"
                     + "<b>TPOT(ms):</b> %{customdata[1]:.2f}<br>"
@@ -1125,6 +1132,7 @@ class EventFn:
                             result_df["tokens/s/user"],
                             result_df["tokens/s/gpu"],
                             result_df["request_latency"],
+                            result_df.get("prefill_tokens/s", pd.Series(0.0, index=result_df.index)),
                         ),
                         axis=1,
                     ),

@@ -82,6 +82,15 @@ def _build_disagg_summary_dict(
     osl = prefill_summary_dict["osl"]
     tokens_s = seq_s * osl
     tokens_s_gpu = tokens_s / num_total_gpus if num_total_gpus > 0 else 0.0
+    prefix = prefill_summary_dict.get("prefix", 0)
+    if pd.isna(prefix):
+        prefix = 0
+    prefill_tokens_per_request = max(prefill_summary_dict["isl"] - prefix, 0)
+    prefill_tokens_s = seq_s * prefill_tokens_per_request
+    prefill_tokens_s_gpu = prefill_tokens_s / num_total_gpus if num_total_gpus > 0 else 0.0
+    prefill_tokens_s_worker = prefill_summary_dict.get("prefill_tokens/s")
+    if pd.isna(prefill_tokens_s_worker):
+        prefill_tokens_s_worker = prefill_summary_dict["seq/s"] * prefill_tokens_per_request
     request_latency = prefill_summary_dict["ttft"] + decode_summary_dict["tpot"] * max(osl - 1, 0)
 
     # Weighted average power
@@ -113,8 +122,11 @@ def _build_disagg_summary_dict(
         "seq/s/gpu": seq_s_gpu,
         "tokens/s": tokens_s,
         "tokens/s/gpu": tokens_s_gpu,
+        "prefill_tokens/s": prefill_tokens_s,
+        "prefill_tokens/s/gpu": prefill_tokens_s_gpu,
         "tokens/s/user": decode_summary_dict["tokens/s/user"],
         "(p)seq/s/worker": prefill_summary_dict["seq/s"],
+        "(p)prefill_tokens/s/worker": prefill_tokens_s_worker,
         "(d)seq/s/worker": decode_summary_dict["seq/s"],
         "num_total_gpus": num_total_gpus,
         "(p)tp": prefill_summary_dict["tp"],

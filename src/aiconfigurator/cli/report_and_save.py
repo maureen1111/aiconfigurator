@@ -100,6 +100,7 @@ def _plot_worker_setup_table(
 
     top_configs["replicas"] = total_gpus // top_configs["num_total_gpus"]
     top_configs["total_gpus_used"] = top_configs["num_total_gpus"] * top_configs["replicas"]
+    show_prefill_throughput = "prefill_tokens/s/gpu" in top_configs.columns
 
     buf.append(f"\n{exp_name} Top Configurations: (Sorted by tokens/s/gpu)")
     table = PrettyTable()
@@ -114,6 +115,7 @@ def _plot_worker_setup_table(
             "Rank",
             "backend",
             _cli_bold("tokens/s/gpu"),
+            *([_cli_bold("prefill tok/s/gpu")] if show_prefill_throughput else []),
             "tokens/s/user",
             "req/s",
             "TTFT",
@@ -180,6 +182,7 @@ def _plot_worker_setup_table(
             row_data.extend(
                 [
                     _cli_bold(f"{row['tokens/s/gpu_cluster']:.2f}"),
+                    *([_cli_bold(f"{row['prefill_tokens/s/gpu']:.2f}")] if show_prefill_throughput else []),
                     f"{row['tokens/s/user']:.2f}",
                     f"{row['cluster_request_rate']:.2f}",
                     f"{row['ttft']:.2f}",
@@ -210,6 +213,7 @@ def _plot_worker_setup_table(
             "Rank",
             "backend",
             _cli_bold("tokens/s/gpu"),
+            *([_cli_bold("prefill tok/s/gpu")] if show_prefill_throughput else []),
             "tokens/s/user",
             "req/s",
             "TTFT",
@@ -251,6 +255,7 @@ def _plot_worker_setup_table(
             row_data.extend(
                 [
                     _cli_bold(f"{row['tokens/s/gpu_cluster']:.2f}"),
+                    *([_cli_bold(f"{row['prefill_tokens/s/gpu']:.2f}")] if show_prefill_throughput else []),
                     f"{row['tokens/s/user']:.2f}",
                     f"{row['cluster_request_rate']:.2f}",
                     f"{row['ttft']:.2f}",
@@ -363,8 +368,17 @@ def log_final_summary(
     summary_box.append(f"    - Per-GPU Throughput: {best_throughput:.2f} tokens/s/gpu")
     if not best_config_df.empty:
         best_conf_details = best_config_df.iloc[0]
-        summary_box.append(f"    - Per-User Throughput: {best_conf_details['tokens/s/user']:.2f} tokens/s/user")
         replicas = chosen_task_config.total_gpus // int(best_conf_details["num_total_gpus"])
+        if "prefill_tokens/s" in best_conf_details.index:
+            prefill_cluster_throughput = float(best_conf_details["prefill_tokens/s"]) * replicas
+            prefill_cluster_throughput_per_gpu = (
+                prefill_cluster_throughput / chosen_task_config.total_gpus if chosen_task_config.total_gpus > 0 else 0.0
+            )
+            summary_box.append(f"    - Prefill Throughput: {prefill_cluster_throughput:,.2f} tokens/s")
+            summary_box.append(
+                f"    - Per-GPU Prefill Throughput: {prefill_cluster_throughput_per_gpu:.2f} tokens/s/gpu"
+            )
+        summary_box.append(f"    - Per-User Throughput: {best_conf_details['tokens/s/user']:.2f} tokens/s/user")
         cluster_rr = float(best_conf_details["request_rate"]) * replicas
         summary_box.append(f"    - Request Rate: {cluster_rr:.2f} req/s")
         summary_box.append(f"    - TTFT: {best_conf_details['ttft']:.2f}ms")

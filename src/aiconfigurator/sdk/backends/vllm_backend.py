@@ -367,6 +367,9 @@ class VLLMBackend(BaseBackend):
             tokens_s = output_throughput
             request_latency = ttft + tpot * max(osl - 1, 0)
             num_total_gpus = tp * pp * dp
+            prefill_tokens_per_request = max(isl - prefix, 0)
+            prefill_tokens_s = seq_s * prefill_tokens_per_request
+            prefill_tokens_s_gpu = prefill_tokens_s / num_total_gpus if num_total_gpus > 0 else 0.0
             parallel = f"tp{tp}pp{pp}dp{dp}etp{moe_tp}ep{moe_ep}"
             gemm = model.config.gemm_quant_mode.name
             kvcache = model.config.kvcache_quant_mode.name
@@ -390,6 +393,8 @@ class VLLMBackend(BaseBackend):
                 "seq/s/gpu": seq_s_gpu,
                 "tokens/s": tokens_s,
                 "tokens/s/gpu": tokens_s_gpu,
+                "prefill_tokens/s": prefill_tokens_s,
+                "prefill_tokens/s/gpu": prefill_tokens_s_gpu,
                 "tokens/s/user": tokens_s_user,
                 "request_latency": request_latency,
                 "num_total_gpus": num_total_gpus,

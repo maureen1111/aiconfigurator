@@ -344,6 +344,9 @@ class BaseBackend(ABC):
         moe_tp = model.config.moe_tp_size
         moe_ep = model.config.moe_ep_size
         num_total_gpus = tp * pp * dp
+        prefill_tokens_per_request = 0 if mode == "static_gen" else max(isl - prefix, 0)
+        prefill_tokens_s = seq_s * prefill_tokens_per_request
+        prefill_tokens_s_gpu = prefill_tokens_s / num_total_gpus if num_total_gpus > 0 else 0.0
         parallel = f"tp{tp}pp{pp}dp{dp}etp{moe_tp}ep{moe_ep}"
         gemm = model.config.gemm_quant_mode.name
         kvcache = model.config.kvcache_quant_mode.name
@@ -368,6 +371,8 @@ class BaseBackend(ABC):
                 seq_s_gpu,
                 tokens_s,
                 tokens_s_gpu,
+                prefill_tokens_s,
+                prefill_tokens_s_gpu,
                 tokens_s_user,
                 request_latency,
                 context_latency,
